@@ -16,7 +16,7 @@
 
 require 'rubygems'
 
-require 'postgres'
+require 'pg'
 require 'set'
 
 # Some hackiness to include the library script, even if invoked from another directory
@@ -296,9 +296,9 @@ def is_city(text, text_starting_index, previous_result)
     found_tokens = previous_result[:found_tokens]
     found_tokens.each do |found_token|
       type = found_token[:type]
-      if type == :COUNTRY:
+      if type == :COUNTRY
         country_code = found_token[:code]
-      elsif type == :REGION:
+      elsif type == :REGION
         region_code = found_token[:code]
       end
     end
@@ -430,7 +430,7 @@ def is_region(text, text_starting_index, previous_result)
         candidate_dicts = []
         all_candidate_dicts.each do |possible_dict|
           candidate_country = possible_dict['country_code']
-          if candidate_country.downcase() == country_code.downcase():
+          if candidate_country.downcase() == country_code.downcase()
             candidate_dicts << possible_dict
           end
         end
@@ -737,12 +737,14 @@ end
 
 # Returns the results of the SQL select statement as associative arrays/hashes
 def select_as_hashes(select, database_name)
+  result = []
+
+  # not inside the Thread.exclusive block, otherwise we get a
+  # 'deadlock; recursive locking' error
+  conn = get_database_connection(database_name)
 
   begin
-
-    conn = get_database_connection(database_name)
-
-    Thread.critical = true
+   Thread.exclusive do
 
     res = conn.exec('BEGIN')
     res.clear
@@ -752,8 +754,8 @@ def select_as_hashes(select, database_name)
     res = conn.exec('FETCH ALL in myportal')
 
     fields = res.fields
-    rows = res.result
-    
+    rows = res.values # array of arrays
+
     res = conn.exec('CLOSE myportal')
     res = conn.exec('END')
     
@@ -762,21 +764,17 @@ def select_as_hashes(select, database_name)
       hash = get_hash_from_row(fields, row)
       result.push(hash)
     end
-    
-  rescue PGError
-    if conn
-      printf(STDERR, conn.error)
-    else
-      $stderr.puts 'select_as_hashes() - no connection for ' + database_name
-    end
+  end    
+
+  rescue PGError => e
+    printf(STDERR, e.error)
     if conn
       conn.close
     end
     $connections[database_name] = nil
     exit(1)
-  ensure
-    Thread.critical = false
-  end  
+  end 
+
 
   return result
 
@@ -784,8 +782,8 @@ end
 
 def get_database_connection(database_name)
   begin
-    Thread.critical = true
-    if !$connections[database_name]
+    Thread.exclusive do 
+   if !$connections[database_name]
       $connections[database_name] = PGconn.connect(DSTKConfig::HOST,
         DSTKConfig::PORT,
         '',
@@ -794,8 +792,8 @@ def get_database_connection(database_name)
         DSTKConfig::USER,
         DSTKConfig::PASSWORD)
     end
+   end
   ensure
-    Thread.critical = false
   end
   if !$connections[database_name]
     $stderr.puts "get_database_connection('#{database_name}') - Couldn't open connection"
