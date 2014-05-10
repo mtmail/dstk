@@ -796,7 +796,7 @@ def geocode_uk_address(address)
       s2c_debug_log("candidate_name='%s'" % candidate_name)
       s2c_debug_log("parts_count='%d'" % parts_count)
 
-      point_string = 'setsrid(makepoint('+PGconn.escape(info[:longitude])+', '+PGconn.escape(info[:latitude])+'), 4326)'
+      point_string = 'ST_SetSRID(ST_MakePoint('+PGconn.escape(info[:longitude])+', '+PGconn.escape(info[:latitude])+'), 4326)'
 
       distance = 0.1
       road_select = 'SELECT name'+
@@ -885,7 +885,7 @@ if __FILE__ == $0
 TEXT
 
   test_text.each_line do |line|
-    output = street2coordinates(line)
+    output = street2coordinates([line])
     puts line
     if output
       puts JSON.pretty_generate(output)
