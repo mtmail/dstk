@@ -1,3 +1,5 @@
+#!/usr/bin/env ruby
+
 # Street2Coordinates
 #
 # This module takes a series of postal addresses and tries to resolve them into
