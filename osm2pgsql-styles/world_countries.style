@@ -1,0 +1,10 @@
+# format follows
+# https://github.com/openstreetmap/osm2pgsql/blob/master/default.style
+
+# OsmType  Tag          DataType     Flags
+node,way   note         text         delete
+node,way   source       text         delete
+
+way        name         text         polygon
+way        country_code text         polygon
+way        region       text         polygon
