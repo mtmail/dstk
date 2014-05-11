@@ -12,5 +12,5 @@ gem "hpricot"
 gem "activesupport"
 gem "htmlentities"
 gem "chronic"
-
+gem "sqlite3"
 
